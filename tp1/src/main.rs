@@ -1,12 +1,27 @@
-use std::{sync::Arc, thread};
+use std::thread;
 
-const INI_INTER: f64 = -5.0;
-const FIN_INTER: f64 = -3.5;
-const TOLERANCIA: f64 = 10e-6;
-const MAX_ITER: u8 = 100;
+use roots::SimpleConvergency;
+
+const INI_INTER: f64 = 0.0;
+const FIN_INTER: f64 = 3.0;
+// const TOLERANCIA: f64 = 1e-6;
+const TOLERANCIA: f64 = 1e-15;
+// const MAX_ITER: u8 = 100;
+const MAX_ITER: u8 = 200;
 
 fn f(x: f64) -> f64 {
-    f64::powf(2.0, x) + f64::powf(8.0, x) - 0.05263157895
+    f64::powf(2.0, x) + f64::powf(8.0, x) - 19.0
+}
+
+fn f_prima(x: f64) -> f64 {
+    f64::powf(2.0, x) * f64::log10(2.0) + f64::powf(8.0, x) * f64::log10(8.0)
+}
+
+fn f_prima_prima(x: f64) -> f64 {
+    f64::powf(
+        f64::powf(2.0, x) * f64::log10(2.0) + f64::powf(8.0, x) * f64::log10(8.0),
+        2.0,
+    )
 }
 
 fn biseccion() -> Vec<f64> {
@@ -14,12 +29,12 @@ fn biseccion() -> Vec<f64> {
 
     let mut a = INI_INTER;
     let mut b = FIN_INTER;
-    for _ in 0..MAX_ITER {
+    for i in 0..MAX_ITER {
         let p = (a + b) / 2.0;
         let f_p = f(p);
 
         if f_p.abs() < TOLERANCIA
-            || (iteraciones.len() > 0 && (iteraciones.last().unwrap() - f_p).abs() < TOLERANCIA)
+            || (iteraciones.len() > 0 && (iteraciones.last().unwrap() - p).abs() < TOLERANCIA)
         {
             break;
         }
@@ -31,47 +46,135 @@ fn biseccion() -> Vec<f64> {
             // la raiz esta entre p y b
             a = p;
         }
+
         iteraciones.push(p);
-        println!("{p}");
+        println!("BISECCION --> [p_{i}] = {p}");
     }
+
+    println!("BISECCION = {}", iteraciones.last().unwrap());
+    iteraciones
+}
+
+fn punto_fijo() -> Vec<f64> {
+    let mut iteraciones: Vec<f64> = Vec::new();
+    iteraciones
+}
+
+fn secante() -> Vec<f64> {
+    let mut iteraciones: Vec<f64> = Vec::new();
+
+    let mut p_n2 = INI_INTER;
+    let mut p_n1 = FIN_INTER;
+
+    if f(p_n2) * f(p_n1) > 0.0 {
+        println!("No hay cambio de signo. No hay raíz.");
+        return iteraciones;
+    }
+
+    for i in 0..MAX_ITER {
+        let p_n = p_n1 - (f(p_n1) * (p_n1 - p_n2)) / (f(p_n1) - f(p_n2));
+
+        iteraciones.push(p_n);
+
+        println!("SECANTE --> [p_{i}] = {p_n}");
+
+        if f(p_n).abs() < TOLERANCIA || (p_n1 - p_n).abs() < TOLERANCIA {
+            break;
+        }
+
+        p_n2 = p_n1;
+        p_n1 = p_n;
+    }
+
+    println!("SECANTE = {}", iteraciones.last().unwrap());
 
     iteraciones
 }
 
-fn punto_fijo() {
-    todo!()
+fn newton_raphson() -> Vec<f64> {
+    let mut iteraciones: Vec<f64> = Vec::new();
+
+    let mut p_n = 1.0;
+
+    iteraciones.push(p_n);
+
+    for i in 0..MAX_ITER {
+        let p_n1 = p_n - f(p_n) / f_prima(p_n);
+
+        iteraciones.push(p_n1);
+
+        println!("NEWTON RAPHSON --> [p_{i}] = {p_n1}");
+
+        if f(p_n1).abs() < TOLERANCIA || (p_n - p_n1).abs() < TOLERANCIA {
+            break;
+        }
+
+        p_n = p_n1;
+    }
+
+    println!("NEWTON RAPHSON = {}", iteraciones.last().unwrap());
+
+    iteraciones
 }
 
-fn secante() {
-    todo!()
-}
+fn newton_raphson_modificado() -> Vec<f64> {
+    let mut iteraciones: Vec<f64> = Vec::new();
 
-fn newton_raphson() {
-    todo!()
-}
+    let mut p_n = 1.0;
 
-fn newton_raphson_modificado() {
-    todo!()
+    iteraciones.push(p_n);
+
+    for i in 0..MAX_ITER {
+        let p_n1 = p_n
+            - (f(p_n) * f_prima(p_n))
+                / (f64::powf(f_prima(p_n), 2.0) - f(p_n) * f_prima_prima(p_n));
+
+        iteraciones.push(p_n1);
+
+        println!("NEWTON RAPHSON MODIFICADO --> [p_{i}] = {p_n1}");
+
+        if f(p_n1).abs() < TOLERANCIA || (p_n - p_n1).abs() < TOLERANCIA {
+            break;
+        }
+
+        p_n = p_n1;
+    }
+
+    println!(
+        "NEWTON RAPHSON MODIFICADO = {}",
+        iteraciones.last().unwrap()
+    );
+    iteraciones
 }
 
 fn main() {
-    biseccion();
-    // let mut handler = vec![];
+    let mut handler = vec![];
 
-    // let biseccion = thread::spawn(move || biseccion());
-    // handler.push(biseccion);
+    let biseccion = thread::spawn(move || biseccion());
+    handler.push(biseccion);
 
-    // let punto_fijo = thread::spawn(move || punto_fijo());
-    // handler.push(punto_fijo);
+    let punto_fijo = thread::spawn(move || punto_fijo());
+    handler.push(punto_fijo);
 
-    // let secante = thread::spawn(move || secante());
-    // handler.push(secante);
+    let secante = thread::spawn(move || secante());
+    handler.push(secante);
 
-    // let newton_raphson = thread::spawn(move || newton_raphson());
-    // handler.push(newton_raphson);
+    let newton_raphson = thread::spawn(move || newton_raphson());
+    handler.push(newton_raphson);
 
-    // let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
-    // handler.push(newton_raphson_modificado);
+    let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
+    handler.push(newton_raphson_modificado);
 
-    // let _: Vec<()> = handler.into_iter().flat_map(|x| x.join()).collect();
+    for h in handler {
+        let _ = h.join();
+    }
+
+    // let mut convergency = SimpleConvergency {
+    //     eps: TOLERANCIA,
+    //     max_iter: 200,
+    // };
+
+    // let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+
+    // println!("Root found by crate: {}", r.unwrap());
 }
