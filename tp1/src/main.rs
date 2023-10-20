@@ -33,9 +33,7 @@ fn biseccion() -> Vec<f64> {
         let p = (a + b) / 2.0;
         let f_p = f(p);
 
-        if f_p.abs() < TOLERANCIA
-            || (iteraciones.len() > 0 && (iteraciones.last().unwrap() - p).abs() < TOLERANCIA)
-        {
+        if iteraciones.len() > 0 && (iteraciones.last().unwrap() - p).abs() < TOLERANCIA {
             break;
         }
 
@@ -55,8 +53,32 @@ fn biseccion() -> Vec<f64> {
     iteraciones
 }
 
+fn g(x: f64) -> f64 {
+    (19.0 - f64::powf(2.0, x)).log(8.0)
+}
+
 fn punto_fijo() -> Vec<f64> {
     let mut iteraciones: Vec<f64> = Vec::new();
+    let mut p_n = (INI_INTER + FIN_INTER) / 2.0; // Punto intermedio para la semilla
+
+    iteraciones.push(p_n);
+
+    for i in 0..MAX_ITER {
+        let p_n1 = g(p_n);
+
+        iteraciones.push(p_n1);
+
+        println!("PUNTO FIJO --> [p_{i}] = {p_n1}");
+
+        if (p_n - p_n1).abs() < TOLERANCIA {
+            break;
+        }
+
+        p_n = p_n1;
+    }
+
+    println!("PUNTO FIJO = {}", iteraciones.last().unwrap());
+
     iteraciones
 }
 
@@ -78,7 +100,7 @@ fn secante() -> Vec<f64> {
 
         println!("SECANTE --> [p_{i}] = {p_n}");
 
-        if f(p_n).abs() < TOLERANCIA || (p_n1 - p_n).abs() < TOLERANCIA {
+        if (p_n1 - p_n).abs() < TOLERANCIA {
             break;
         }
 
@@ -105,7 +127,7 @@ fn newton_raphson() -> Vec<f64> {
 
         println!("NEWTON RAPHSON --> [p_{i}] = {p_n1}");
 
-        if f(p_n1).abs() < TOLERANCIA || (p_n - p_n1).abs() < TOLERANCIA {
+        if (p_n - p_n1).abs() < TOLERANCIA {
             break;
         }
 
@@ -133,7 +155,7 @@ fn newton_raphson_modificado() -> Vec<f64> {
 
         println!("NEWTON RAPHSON MODIFICADO --> [p_{i}] = {p_n1}");
 
-        if f(p_n1).abs() < TOLERANCIA || (p_n - p_n1).abs() < TOLERANCIA {
+        if (p_n - p_n1).abs() < TOLERANCIA {
             break;
         }
 
@@ -148,26 +170,31 @@ fn newton_raphson_modificado() -> Vec<f64> {
 }
 
 fn main() {
-    let mut handler = vec![];
+    biseccion();
+    punto_fijo();
+    secante();
+    newton_raphson();
+    newton_raphson_modificado();
+    // let mut handler = vec![];
 
-    let biseccion = thread::spawn(move || biseccion());
-    handler.push(biseccion);
+    // let biseccion = thread::spawn(move || biseccion());
+    // handler.push(biseccion);
 
-    let punto_fijo = thread::spawn(move || punto_fijo());
-    handler.push(punto_fijo);
+    // let punto_fijo = thread::spawn(move || punto_fijo());
+    // handler.push(punto_fijo);
 
-    let secante = thread::spawn(move || secante());
-    handler.push(secante);
+    // let secante = thread::spawn(move || secante());
+    // handler.push(secante);
 
-    let newton_raphson = thread::spawn(move || newton_raphson());
-    handler.push(newton_raphson);
+    // let newton_raphson = thread::spawn(move || newton_raphson());
+    // handler.push(newton_raphson);
 
-    let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
-    handler.push(newton_raphson_modificado);
+    // let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
+    // handler.push(newton_raphson_modificado);
 
-    for h in handler {
-        let _ = h.join();
-    }
+    // for h in handler {
+    //     let _ = h.join();
+    // }
 
     // let mut convergency = SimpleConvergency {
     //     eps: TOLERANCIA,
