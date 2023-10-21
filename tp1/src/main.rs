@@ -1,12 +1,51 @@
+use core::f64;
+use plotters::prelude::*;
 use roots::SimpleConvergency;
-use std::thread;
+use std::{fmt, thread};
 
 const INI_INTER: f64 = 0.0;
 const FIN_INTER: f64 = 3.0;
-const TOLERANCIA: f64 = 1e-5;
-// const TOLERANCIA: f64 = 1e-13;
+// const TOLERANCIA: f64 = 1e-5;
+const TOLERANCIA: f64 = 1e-13;
 // const MAX_ITER: u8 = 100;
 const MAX_ITER: u8 = 200;
+const GRAPH_RES: (u32, u32) = (1000, 800);
+
+#[derive(Debug)]
+enum Metodos {
+    Biseccion,
+    PuntoFijo,
+    Secante,
+    NewtonRaphson,
+    NewtonRaphsonModificado,
+}
+
+impl TryFrom<i32> for Metodos {
+    type Error = ();
+
+    fn try_from(v: i32) -> Result<Self, Self::Error> {
+        match v {
+            x if x == 0 => Ok(Metodos::Biseccion),
+            x if x == 1 => Ok(Metodos::PuntoFijo),
+            x if x == 2 => Ok(Metodos::Secante),
+            x if x == 3 => Ok(Metodos::NewtonRaphson),
+            x if x == 4 => Ok(Metodos::NewtonRaphsonModificado),
+            _ => Err(()),
+        }
+    }
+}
+
+impl fmt::Display for Metodos {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Metodos::Biseccion => write!(f, "Biseccion"),
+            Metodos::PuntoFijo => write!(f, "Punto Fijo"),
+            Metodos::Secante => write!(f, "Secante"),
+            Metodos::NewtonRaphson => write!(f, "Newton Raphson"),
+            Metodos::NewtonRaphsonModificado => write!(f, "Newton Raphson Modificado"),
+        }
+    }
+}
 
 fn f(x: f64) -> f64 {
     f64::powf(2.0, x) + f64::powf(8.0, x) - 19.0
@@ -45,10 +84,10 @@ fn biseccion() -> Vec<f64> {
         }
 
         iteraciones.push(p);
-        println!("BISECCION --> [p_{i}] = {p}");
+        // println!("BISECCION --> [p_{i}] = {p}");
     }
 
-    println!("BISECCION = {}", iteraciones.last().unwrap());
+    // println!("BISECCION = {}", iteraciones.last().unwrap());
     iteraciones
 }
 
@@ -67,7 +106,7 @@ fn punto_fijo() -> Vec<f64> {
 
         iteraciones.push(p_n1);
 
-        println!("PUNTO FIJO --> [p_{i}] = {p_n1}");
+        // println!("PUNTO FIJO --> [p_{i}] = {p_n1}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -76,7 +115,7 @@ fn punto_fijo() -> Vec<f64> {
         p_n = p_n1;
     }
 
-    println!("PUNTO FIJO = {}", iteraciones.last().unwrap());
+    // println!("PUNTO FIJO = {}", iteraciones.last().unwrap());
 
     iteraciones
 }
@@ -97,7 +136,7 @@ fn secante() -> Vec<f64> {
 
         iteraciones.push(p_n);
 
-        println!("SECANTE --> [p_{i}] = {p_n}");
+        // println!("SECANTE --> [p_{i}] = {p_n}");
 
         if (p_n1 - p_n).abs() < TOLERANCIA {
             break;
@@ -107,7 +146,7 @@ fn secante() -> Vec<f64> {
         p_n1 = p_n;
     }
 
-    println!("SECANTE = {}", iteraciones.last().unwrap());
+    // println!("SECANTE = {}", iteraciones.last().unwrap());
 
     iteraciones
 }
@@ -124,7 +163,7 @@ fn newton_raphson() -> Vec<f64> {
 
         iteraciones.push(p_n1);
 
-        println!("NEWTON RAPHSON --> [p_{i}] = {p_n1}");
+        // println!("NEWTON RAPHSON --> [p_{i}] = {p_n1}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -133,7 +172,7 @@ fn newton_raphson() -> Vec<f64> {
         p_n = p_n1;
     }
 
-    println!("NEWTON RAPHSON = {}", iteraciones.last().unwrap());
+    // println!("NEWTON RAPHSON = {}", iteraciones.last().unwrap());
 
     iteraciones
 }
@@ -152,7 +191,7 @@ fn newton_raphson_modificado() -> Vec<f64> {
 
         iteraciones.push(p_n1);
 
-        println!("NEWTON RAPHSON MODIFICADO --> [p_{i}] = {p_n1}");
+        // println!("NEWTON RAPHSON MODIFICADO --> [p_{i}] = {p_n1}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -161,19 +200,252 @@ fn newton_raphson_modificado() -> Vec<f64> {
         p_n = p_n1;
     }
 
-    println!(
-        "NEWTON RAPHSON MODIFICADO = {}",
-        iteraciones.last().unwrap()
-    );
+    // println!(
+    //     "NEWTON RAPHSON MODIFICADO = {}",
+    //     iteraciones.last().unwrap()
+    // );
     iteraciones
 }
 
+fn orden_de_convergencia(iteraciones: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    let mut convergencias: Vec<Vec<f64>> = Vec::new();
+
+    for metodo in iteraciones {
+        let mut convergencia: Vec<f64> = Vec::new();
+
+        for i in 0..(metodo.len() - 1) {
+            if i < 3 {
+                convergencia.push(0.0);
+            } else {
+                let x_n_mas_uno: f64 = metodo[i + 1];
+                let x_n: f64 = metodo[i];
+                let x_n_menos_uno: f64 = metodo[i - 1];
+                let x_n_menos_dos: f64 = metodo[i - 2];
+
+                let log_numerador: f64 =
+                    f64::log10(((x_n_mas_uno - x_n) / (x_n - x_n_menos_uno)).abs());
+                let log_denominador: f64 =
+                    f64::log10(((x_n - x_n_menos_uno) / (x_n_menos_uno - x_n_menos_dos)).abs());
+
+                if log_denominador.abs() < TOLERANCIA
+                    || log_numerador.abs() < TOLERANCIA
+                    || log_denominador.is_infinite()
+                    || log_numerador.is_infinite()
+                {
+                    convergencia.push(*convergencia.last().unwrap());
+                } else {
+                    let alfa: f64 = log_numerador / log_denominador;
+
+                    if alfa.abs() > TOLERANCIA {
+                        convergencia.push(alfa);
+                    } else {
+                        convergencia.push(*convergencia.last().unwrap());
+                    }
+                }
+            }
+        }
+
+        convergencias.push(convergencia);
+    }
+
+    convergencias
+}
+
+fn constante_asintotica(
+    iteraciones: &Vec<Vec<f64>>,
+    alfa: Vec<f64>,
+    raiz: Vec<f64>,
+) -> Vec<Vec<f64>> {
+    let mut constantes: Vec<Vec<f64>> = Vec::new();
+
+    for (metodo, iteracion) in iteraciones.iter().enumerate() {
+        let mut constante: Vec<f64> = Vec::new();
+
+        for i in 0..(iteracion.len() - 1) {
+            if i < 2 {
+                constante.push(0.0);
+            } else {
+                let x_n_mas_uno: f64 = iteracion[i + 1];
+                let x_n: f64 = iteracion[i];
+                let numerador = (x_n_mas_uno - raiz[metodo]).abs();
+                let denominador = f64::powf((x_n - raiz[metodo]).abs(), alfa[metodo]);
+                if denominador < TOLERANCIA {
+                    constante.push(*constante.last().unwrap());
+                } else {
+                    let cte: f64 = numerador / denominador;
+                    if cte.abs() < TOLERANCIA {
+                        constante.push(*constante.last().unwrap());
+                    } else {
+                        constante.push(cte);
+                    }
+                }
+            }
+        }
+
+        constantes.push(constante);
+    }
+
+    constantes
+}
+
+fn grafico_convergencia(
+    convergencias: &Vec<Vec<f64>>,
+    cant_iteraciones: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let drawing_area = SVGBackend::new("./convergencia.svg", GRAPH_RES).into_drawing_area();
+    drawing_area.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder
+        .margin(10)
+        .set_left_and_bottom_label_area_size(20);
+    let mut chart_context = chart_builder
+        .caption("Gráfico de Convergencia", ("times-new-roman", 40))
+        .build_cartesian_2d(0f32..((cant_iteraciones + 10) as f32), -1f32..3f32)
+        .unwrap();
+    chart_context.configure_mesh().draw().unwrap();
+
+    let colors: Vec<RGBAColor> = vec![
+        plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
+        plotters::style::colors::full_palette::PINK_A200.into(),   // PUNTO FIJO
+        plotters::style::colors::full_palette::DEEPPURPLE_400.into(), // SECANTE
+        plotters::style::colors::full_palette::INDIGO.into(),      // NEWTON RAPHSON
+        plotters::style::colors::full_palette::TEAL.into(),        // NEWTON RAPHSON MODIFICADO
+    ];
+
+    for (metodo, convergencia) in convergencias.iter().enumerate() {
+        let eje_x: Vec<u8> = (0..((convergencia.len() - 1) as u8)).collect();
+
+        let color = *colors.get(metodo).unwrap();
+
+        chart_context
+            .draw_series(
+                LineSeries::new(
+                    eje_x.iter().map(|x_i| {
+                        (
+                            *x_i as f32,
+                            *convergencia.get(*x_i as usize).unwrap() as f32,
+                        )
+                    }),
+                    ShapeStyle {
+                        color: color.clone(),
+                        filled: true,
+                        stroke_width: 2,
+                    },
+                )
+                .point_size(5),
+            )
+            .unwrap()
+            .label(format!(
+                "{}",
+                Metodos::try_from(metodo as i32).unwrap().to_string()
+            ))
+            .legend(move |(x, y)| {
+                Rectangle::new(
+                    [(x + 5, y - 5), (x + 15, y + 5)],
+                    ShapeStyle {
+                        color: color,
+                        filled: true,
+                        stroke_width: 1,
+                    },
+                )
+            });
+    }
+
+    chart_context
+        .configure_series_labels()
+        .position(SeriesLabelPosition::UpperRight)
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw()?;
+
+    Ok(())
+}
+
+fn grafico_constante_asintotica(
+    constantes_asintoticas: &Vec<Vec<f64>>,
+    cant_iteraciones: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let drawing_area = SVGBackend::new("./constante_asintotica.svg", GRAPH_RES).into_drawing_area();
+    drawing_area.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder
+        .margin(10)
+        .set_left_and_bottom_label_area_size(20);
+    let mut chart_context = chart_builder
+        .caption("Gráfico de Constante Asintótica", ("times-new-roman", 40))
+        .build_cartesian_2d(0f32..((cant_iteraciones + 10) as f32), 0f32..3f32)
+        .unwrap();
+    chart_context.configure_mesh().draw().unwrap();
+
+    let colors: Vec<RGBAColor> = vec![
+        plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
+        plotters::style::colors::full_palette::PINK_A200.into(),   // PUNTO FIJO
+        plotters::style::colors::full_palette::DEEPPURPLE_400.into(), // SECANTE
+        plotters::style::colors::full_palette::INDIGO.into(),      // NEWTON RAPHSON
+        plotters::style::colors::full_palette::TEAL.into(),        // NEWTON RAPHSON MODIFICADO
+    ];
+
+    for (metodo, convergencia) in constantes_asintoticas.iter().enumerate() {
+        let eje_x: Vec<u8> = (0..((convergencia.len() - 1) as u8)).collect();
+
+        let color = *colors.get(metodo).unwrap();
+
+        chart_context
+            .draw_series(
+                LineSeries::new(
+                    eje_x.iter().map(|x_i| {
+                        (
+                            *x_i as f32,
+                            *convergencia.get(*x_i as usize).unwrap() as f32,
+                        )
+                    }),
+                    ShapeStyle {
+                        color: color.clone(),
+                        filled: true,
+                        stroke_width: 2,
+                    },
+                )
+                .point_size(5),
+            )
+            .unwrap()
+            .label("Gráfico de Constante Asintótica")
+            .label(format!(
+                "{}",
+                Metodos::try_from(metodo as i32).unwrap().to_string()
+            ))
+            .legend(move |(x, y)| {
+                Rectangle::new(
+                    [(x + 5, y - 5), (x + 15, y + 5)],
+                    ShapeStyle {
+                        color: color,
+                        filled: true,
+                        stroke_width: 1,
+                    },
+                )
+            });
+    }
+
+    chart_context
+        .configure_series_labels()
+        .position(SeriesLabelPosition::UpperRight)
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw()?;
+
+    Ok(())
+}
+
 fn main() {
-    biseccion();
-    punto_fijo();
-    secante();
-    newton_raphson();
-    newton_raphson_modificado();
+    // let iteraciones: Vec<f64> = biseccion();
+    // let iteraciones: Vec<f64> = punto_fijo();
+    // let iteraciones: Vec<f64> = secante();
+    let mut iteraciones: Vec<Vec<f64>> = Vec::new();
+    iteraciones.push(biseccion());
+    iteraciones.push(punto_fijo());
+    iteraciones.push(secante());
+    iteraciones.push(newton_raphson());
+    iteraciones.push(newton_raphson_modificado());
+    // let iteraciones: Vec<f64> = newton_raphson_modificado();
     // let mut handler = vec![];
 
     // let biseccion = thread::spawn(move || biseccion());
@@ -195,12 +467,39 @@ fn main() {
     //     let _ = h.join();
     // }
 
-    let mut convergency = SimpleConvergency {
-        eps: TOLERANCIA,
-        max_iter: 200,
-    };
+    //// GRAFICOS
+    // CONVERGENCIA
+    let convergencias: Vec<Vec<f64>> = orden_de_convergencia(&iteraciones);
 
-    let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+    let mut max_iter = 0;
+    for metodo in &iteraciones {
+        if metodo.len() > max_iter {
+            max_iter = metodo.len();
+        }
+    }
 
-    println!("Root found by crate: {}", r.unwrap());
+    let _ = grafico_convergencia(&convergencias, (max_iter - 1) as u8);
+
+    // CTE ASINTOTICA
+    let ultima_convergencia: Vec<f64> = convergencias
+        .iter()
+        .map(|convergencia| *convergencia.last().unwrap())
+        .collect();
+    let ultima_raiz: Vec<f64> = iteraciones
+        .iter()
+        .map(|iteracion| *iteracion.last().unwrap())
+        .collect();
+    let constantes_asintoticas: Vec<Vec<f64>> =
+        constante_asintotica(&iteraciones, ultima_convergencia, ultima_raiz);
+
+    let _ = grafico_constante_asintotica(&constantes_asintoticas, (max_iter - 1) as u8);
+
+    // let mut convergency = SimpleConvergency {
+    //     eps: TOLERANCIA,
+    //     max_iter: 200,
+    // };
+
+    // let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+
+    // println!("Root found by crate: {}", r.unwrap());
 }

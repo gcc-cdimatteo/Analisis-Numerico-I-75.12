@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 roots = "0.0.8"
+plotters = "0.3"
