@@ -1,11 +1,10 @@
-use std::thread;
-
 use roots::SimpleConvergency;
+use std::thread;
 
 const INI_INTER: f64 = 0.0;
 const FIN_INTER: f64 = 3.0;
-// const TOLERANCIA: f64 = 1e-6;
-const TOLERANCIA: f64 = 1e-15;
+const TOLERANCIA: f64 = 1e-5;
+// const TOLERANCIA: f64 = 1e-13;
 // const MAX_ITER: u8 = 100;
 const MAX_ITER: u8 = 200;
 
@@ -14,7 +13,7 @@ fn f(x: f64) -> f64 {
 }
 
 fn f_prima(x: f64) -> f64 {
-    f64::powf(2.0, x) * f64::log10(2.0) + f64::powf(8.0, x) * f64::log10(8.0)
+    f64::powf(2.0, x) * f64::ln(2.0) + 3.0 * f64::ln(2.0) * f64::powf(8.0, x)
 }
 
 fn f_prima_prima(x: f64) -> f64 {
@@ -116,7 +115,7 @@ fn secante() -> Vec<f64> {
 fn newton_raphson() -> Vec<f64> {
     let mut iteraciones: Vec<f64> = Vec::new();
 
-    let mut p_n = 1.0;
+    let mut p_n = 0.5;
 
     iteraciones.push(p_n);
 
@@ -196,12 +195,12 @@ fn main() {
     //     let _ = h.join();
     // }
 
-    // let mut convergency = SimpleConvergency {
-    //     eps: TOLERANCIA,
-    //     max_iter: 200,
-    // };
+    let mut convergency = SimpleConvergency {
+        eps: TOLERANCIA,
+        max_iter: 200,
+    };
 
-    // let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+    let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
 
-    // println!("Root found by crate: {}", r.unwrap());
+    println!("Root found by crate: {}", r.unwrap());
 }
