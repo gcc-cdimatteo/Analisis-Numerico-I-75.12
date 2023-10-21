@@ -1,7 +1,7 @@
 use core::f64;
 use plotters::prelude::*;
 use roots::SimpleConvergency;
-use std::{intrinsics::floorf64, thread};
+use std::thread;
 
 const INI_INTER: f64 = 0.0;
 const FIN_INTER: f64 = 3.0;
@@ -199,6 +199,24 @@ fn orden_de_convergencia(iteraciones: Vec<f64>) -> Vec<f64> {
     convergencia
 }
 
+fn constante_asintotica(iteraciones: Vec<f64>, alfa: f64, raiz: f64) -> Vec<f64> {
+    let mut constantes: Vec<f64> = Vec::new();
+
+    for i in 0..(iteraciones.len() - 1) {
+        if i < 2 {
+            constantes.push(0.0);
+        } else {
+            let x_n_mas_uno: f64 = iteraciones[i + 1];
+            let x_n: f64 = iteraciones[i];
+            let numerador = (x_n_mas_uno - raiz).abs();
+            let denominador = f64::powf((x_n - raiz).abs(), alfa);
+            let constante: f64 = numerador / denominador;
+            constantes.push(constante);
+        }
+    }
+    constantes
+}
+
 fn grafico_convergencia(
     convergencia: Vec<f64>,
     iteraciones: Vec<f64>,
@@ -216,22 +234,14 @@ fn grafico_convergencia(
         .unwrap();
     chart_context.configure_mesh().draw().unwrap();
     // chart_context
-    //     .draw_series(LineSeries::new(x_values.map(|x| (x, 0.3 * x)), BLACK))
-    //     .unwrap();
-    chart_context
-        .draw_series(
-            LineSeries::new(
-                (0.0..(x_values.len() as f64)).map(|i| (i, convergencia.get(i))),
-                RED,
-            )
-            .point_size(5),
-        )
-        // (0..x_values.len()).iter().map(|i| (i, convergencia.get(i)))
-        .unwrap();
-    // chart_context
     //     .draw_series(
-    //         LineSeries::new(x_values.map(|x| (x, 2. - 0.1 * x * x)), BLUE.filled()).point_size(4),
+    //         LineSeries::new(
+    //             (0.0..(x_values.len() as f64)).map(|i| (i, convergencia.get(i))),
+    //             RED,
+    //         )
+    //         .point_size(5),
     //     )
+    //     // (0..x_values.len()).iter().map(|i| (i, convergencia.get(i)))
     //     .unwrap();
     Ok(())
 }
@@ -264,9 +274,13 @@ fn main() {
     // }
 
     // GRAFICOS
-
+    let raiz: f64 = *iteraciones.last().unwrap();
     let convergencia: Vec<f64> = orden_de_convergencia(iteraciones.clone());
-    let _ = grafico_convergencia(convergencia, iteraciones);
+    // let _ = grafico_convergencia(convergencia, iteraciones.clone());
+    let orden_conv: f64 = *convergencia.last().unwrap();
+    let constante_asin: Vec<f64> = constante_asintotica(iteraciones, orden_conv, raiz);
+
+    println!("CONSTANTES: {:?}", constante_asin);
 
     // let mut convergency = SimpleConvergency {
     //     eps: TOLERANCIA,
