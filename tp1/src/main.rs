@@ -1,10 +1,12 @@
+use core::f64;
+use plotters::prelude::*;
 use roots::SimpleConvergency;
-use std::thread;
+use std::{intrinsics::floorf64, thread};
 
 const INI_INTER: f64 = 0.0;
 const FIN_INTER: f64 = 3.0;
-const TOLERANCIA: f64 = 1e-5;
-// const TOLERANCIA: f64 = 1e-13;
+// const TOLERANCIA: f64 = 1e-5;
+const TOLERANCIA: f64 = 1e-13;
 // const MAX_ITER: u8 = 100;
 const MAX_ITER: u8 = 200;
 
@@ -168,12 +170,78 @@ fn newton_raphson_modificado() -> Vec<f64> {
     iteraciones
 }
 
+fn orden_de_convergencia(iteraciones: Vec<f64>) -> Vec<f64> {
+    let mut convergencia: Vec<f64> = Vec::new();
+
+    for i in 0..(iteraciones.len() - 1) {
+        if i < 3 {
+            convergencia.push(0.0);
+        } else {
+            let x_n_mas_uno: f64 = iteraciones[i + 1];
+            let x_n: f64 = iteraciones[i];
+            let x_n_menos_uno: f64 = iteraciones[i - 1];
+            let x_n_menos_dos: f64 = iteraciones[i - 2];
+
+            let log_numerador: f64 =
+                f64::log10(((x_n_mas_uno - x_n) / (x_n - x_n_menos_uno)).abs());
+            let log_denominador: f64 =
+                f64::log10(((x_n - x_n_menos_uno) / (x_n_menos_uno - x_n_menos_dos)).abs());
+
+            let alfa: f64 = log_numerador / log_denominador;
+
+            if alfa > TOLERANCIA {
+                convergencia.push(alfa);
+            } else {
+                convergencia.push(*convergencia.last().unwrap());
+            }
+        }
+    }
+    convergencia
+}
+
+fn grafico_convergencia(
+    convergencia: Vec<f64>,
+    iteraciones: Vec<f64>,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let x_values = iteraciones;
+    let x_values_len = x_values.len() as f64;
+    let drawing_area = SVGBackend::new("./plot_test.svg", (600, 500)).into_drawing_area();
+    drawing_area.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder
+        .margin(10)
+        .set_left_and_bottom_label_area_size(20);
+    let mut chart_context = chart_builder
+        .build_cartesian_2d(0.0..4.0, 0.0..3.0)
+        .unwrap();
+    chart_context.configure_mesh().draw().unwrap();
+    // chart_context
+    //     .draw_series(LineSeries::new(x_values.map(|x| (x, 0.3 * x)), BLACK))
+    //     .unwrap();
+    chart_context
+        .draw_series(
+            LineSeries::new(
+                (0.0..(x_values.len() as f64)).map(|i| (i, convergencia.get(i))),
+                RED,
+            )
+            .point_size(5),
+        )
+        // (0..x_values.len()).iter().map(|i| (i, convergencia.get(i)))
+        .unwrap();
+    // chart_context
+    //     .draw_series(
+    //         LineSeries::new(x_values.map(|x| (x, 2. - 0.1 * x * x)), BLUE.filled()).point_size(4),
+    //     )
+    //     .unwrap();
+    Ok(())
+}
+
 fn main() {
-    biseccion();
-    punto_fijo();
-    secante();
-    newton_raphson();
-    newton_raphson_modificado();
+    // let iteraciones: Vec<f64> = biseccion();
+    // let iteraciones: Vec<f64> = punto_fijo();
+    // let iteraciones: Vec<f64> = secante();
+    let iteraciones: Vec<f64> = newton_raphson();
+    // let iteraciones: Vec<f64> = newton_raphson_modificado();
     // let mut handler = vec![];
 
     // let biseccion = thread::spawn(move || biseccion());
@@ -195,12 +263,17 @@ fn main() {
     //     let _ = h.join();
     // }
 
-    let mut convergency = SimpleConvergency {
-        eps: TOLERANCIA,
-        max_iter: 200,
-    };
+    // GRAFICOS
 
-    let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+    let convergencia: Vec<f64> = orden_de_convergencia(iteraciones.clone());
+    let _ = grafico_convergencia(convergencia, iteraciones);
 
-    println!("Root found by crate: {}", r.unwrap());
+    // let mut convergency = SimpleConvergency {
+    //     eps: TOLERANCIA,
+    //     max_iter: 200,
+    // };
+
+    // let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+
+    // println!("Root found by crate: {}", r.unwrap());
 }
