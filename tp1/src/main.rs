@@ -3,13 +3,13 @@ use plotters::prelude::*;
 use roots::SimpleConvergency;
 use std::{fmt, thread};
 
-const INI_INTER: f64 = 0.0;
-const FIN_INTER: f64 = 3.0;
+const INI_INTER: f64 = 1.0;
+const FIN_INTER: f64 = 1.5;
 // const TOLERANCIA: f64 = 1e-5;
 const TOLERANCIA: f64 = 1e-13;
 // const MAX_ITER: u8 = 100;
 const MAX_ITER: u8 = 200;
-const GRAPH_RES: (u32, u32) = (1000, 800);
+const GRAPH_RES: (u32, u32) = (1600, 800);
 
 #[derive(Debug)]
 enum Metodos {
@@ -62,7 +62,7 @@ fn f_prima_prima(x: f64) -> f64 {
     )
 }
 
-fn biseccion() -> Vec<f64> {
+fn biseccion() -> (Metodos, Vec<f64>) {
     let mut iteraciones: Vec<f64> = Vec::new();
 
     let mut a = INI_INTER;
@@ -84,18 +84,18 @@ fn biseccion() -> Vec<f64> {
         }
 
         iteraciones.push(p);
-        // println!("BISECCION --> [p_{i}] = {p}");
+        // println!("iteración {i} = {p}");
     }
 
     // println!("BISECCION = {}", iteraciones.last().unwrap());
-    iteraciones
+    (Metodos::Biseccion, iteraciones)
 }
 
 fn g(x: f64) -> f64 {
     (19.0 - f64::powf(2.0, x)).log(8.0)
 }
 
-fn punto_fijo() -> Vec<f64> {
+fn punto_fijo() -> (Metodos, Vec<f64>) {
     let mut iteraciones: Vec<f64> = Vec::new();
     let mut p_n = (INI_INTER + FIN_INTER) / 2.0; // Punto intermedio para la semilla
 
@@ -106,7 +106,7 @@ fn punto_fijo() -> Vec<f64> {
 
         iteraciones.push(p_n1);
 
-        // println!("PUNTO FIJO --> [p_{i}] = {p_n1}");
+        // println!("iteración {i} = {p_n1}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -116,11 +116,10 @@ fn punto_fijo() -> Vec<f64> {
     }
 
     // println!("PUNTO FIJO = {}", iteraciones.last().unwrap());
-
-    iteraciones
+    (Metodos::PuntoFijo, iteraciones)
 }
 
-fn secante() -> Vec<f64> {
+fn secante() -> (Metodos, Vec<f64>) {
     let mut iteraciones: Vec<f64> = Vec::new();
 
     let mut p_n2 = INI_INTER;
@@ -128,7 +127,7 @@ fn secante() -> Vec<f64> {
 
     if f(p_n2) * f(p_n1) > 0.0 {
         println!("No hay cambio de signo. No hay raíz.");
-        return iteraciones;
+        return (Metodos::Secante, iteraciones);
     }
 
     for i in 0..MAX_ITER {
@@ -137,6 +136,7 @@ fn secante() -> Vec<f64> {
         iteraciones.push(p_n);
 
         // println!("SECANTE --> [p_{i}] = {p_n}");
+        // println!("iteración {i} = {p_n}");
 
         if (p_n1 - p_n).abs() < TOLERANCIA {
             break;
@@ -148,10 +148,10 @@ fn secante() -> Vec<f64> {
 
     // println!("SECANTE = {}", iteraciones.last().unwrap());
 
-    iteraciones
+    (Metodos::Secante, iteraciones)
 }
 
-fn newton_raphson() -> Vec<f64> {
+fn newton_raphson() -> (Metodos, Vec<f64>) {
     let mut iteraciones: Vec<f64> = Vec::new();
 
     let mut p_n = 0.5;
@@ -164,6 +164,7 @@ fn newton_raphson() -> Vec<f64> {
         iteraciones.push(p_n1);
 
         // println!("NEWTON RAPHSON --> [p_{i}] = {p_n1}");
+        // println!("iteración {i} = {p_n}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -174,10 +175,10 @@ fn newton_raphson() -> Vec<f64> {
 
     // println!("NEWTON RAPHSON = {}", iteraciones.last().unwrap());
 
-    iteraciones
+    (Metodos::NewtonRaphson, iteraciones)
 }
 
-fn newton_raphson_modificado() -> Vec<f64> {
+fn newton_raphson_modificado() -> (Metodos, Vec<f64>) {
     let mut iteraciones: Vec<f64> = Vec::new();
 
     let mut p_n = 1.0;
@@ -192,6 +193,7 @@ fn newton_raphson_modificado() -> Vec<f64> {
         iteraciones.push(p_n1);
 
         // println!("NEWTON RAPHSON MODIFICADO --> [p_{i}] = {p_n1}");
+        // println!("iteración {i} = {p_n}");
 
         if (p_n - p_n1).abs() < TOLERANCIA {
             break;
@@ -204,7 +206,7 @@ fn newton_raphson_modificado() -> Vec<f64> {
     //     "NEWTON RAPHSON MODIFICADO = {}",
     //     iteraciones.last().unwrap()
     // );
-    iteraciones
+    (Metodos::NewtonRaphsonModificado, iteraciones)
 }
 
 fn orden_de_convergencia(iteraciones: &Vec<Vec<f64>>) -> Vec<Vec<f64>> {
@@ -300,9 +302,20 @@ fn grafico_convergencia(
         .set_left_and_bottom_label_area_size(20);
     let mut chart_context = chart_builder
         .caption("Gráfico de Convergencia", ("times-new-roman", 40))
-        .build_cartesian_2d(0f32..((cant_iteraciones + 10) as f32), -1f32..3f32)
+        .y_label_area_size(60)
+        .x_label_area_size(50)
+        .build_cartesian_2d(0f32..((cant_iteraciones) as f32), 0f32..3f32)
         .unwrap();
-    chart_context.configure_mesh().draw().unwrap();
+
+    chart_context
+        .configure_mesh()
+        .x_labels(15)
+        .y_labels(5)
+        .x_desc("número de iteraciones")
+        .y_desc("convergencia")
+        .axis_desc_style(("times-new-roman", 20))
+        .draw()
+        .unwrap();
 
     let colors: Vec<RGBAColor> = vec![
         plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
@@ -371,11 +384,23 @@ fn grafico_constante_asintotica(
     chart_builder
         .margin(10)
         .set_left_and_bottom_label_area_size(20);
+
     let mut chart_context = chart_builder
         .caption("Gráfico de Constante Asintótica", ("times-new-roman", 40))
-        .build_cartesian_2d(0f32..((cant_iteraciones + 10) as f32), 0f32..3f32)
+        .y_label_area_size(60)
+        .x_label_area_size(50)
+        .build_cartesian_2d(0f32..((cant_iteraciones) as f32), 0f32..9f32)
         .unwrap();
-    chart_context.configure_mesh().draw().unwrap();
+
+    chart_context
+        .configure_mesh()
+        .x_labels(15)
+        .y_labels(5)
+        .x_desc("número de iteraciones")
+        .y_desc("constante asintótica")
+        .axis_desc_style(("times-new-roman", 20))
+        .draw()
+        .unwrap();
 
     let colors: Vec<RGBAColor> = vec![
         plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
@@ -408,7 +433,190 @@ fn grafico_constante_asintotica(
                 .point_size(5),
             )
             .unwrap()
-            .label("Gráfico de Constante Asintótica")
+            .label(format!(
+                "{}",
+                Metodos::try_from(metodo as i32).unwrap().to_string()
+            ))
+            .legend(move |(x, y)| {
+                Rectangle::new(
+                    [(x + 5, y - 5), (x + 15, y + 5)],
+                    ShapeStyle {
+                        color: color,
+                        filled: true,
+                        stroke_width: 1,
+                    },
+                )
+            });
+    }
+
+    chart_context
+        .configure_series_labels()
+        .position(SeriesLabelPosition::UpperRight)
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw()?;
+
+    Ok(())
+}
+
+fn grafico_diferencias_sucesivas(
+    iteraciones: &Vec<Vec<f64>>,
+    cant_iteraciones: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let drawing_area =
+        SVGBackend::new("./diferencias_sucesivas.svg", GRAPH_RES).into_drawing_area();
+    drawing_area.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder
+        .margin(10)
+        .set_left_and_bottom_label_area_size(20);
+
+    let mut chart_context = chart_builder
+        .caption(
+            "Gráfico de Diferencias Sucesivas en Escala Logarítmica",
+            ("times-new-roman", 40),
+        )
+        .y_label_area_size(60)
+        .x_label_area_size(50)
+        .build_cartesian_2d(0f32..((cant_iteraciones) as f32), -14f32..1f32)
+        .unwrap();
+
+    chart_context
+        .configure_mesh()
+        .x_labels(15)
+        .y_labels(5)
+        .x_desc("número de iteraciones")
+        .y_desc("log10(|Δx|)")
+        .axis_desc_style(("times-new-roman", 20))
+        .draw()
+        .unwrap();
+
+    let colors: Vec<RGBAColor> = vec![
+        plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
+        plotters::style::colors::full_palette::PINK_A200.into(),   // PUNTO FIJO
+        plotters::style::colors::full_palette::DEEPPURPLE_400.into(), // SECANTE
+        plotters::style::colors::full_palette::INDIGO.into(),      // NEWTON RAPHSON
+        plotters::style::colors::full_palette::TEAL.into(),        // NEWTON RAPHSON MODIFICADO
+    ];
+
+    for (metodo, iteracion) in iteraciones.iter().enumerate() {
+        let eje_x: Vec<u8> = (1..((iteracion.len() - 1) as u8)).collect();
+
+        let color = *colors.get(metodo).unwrap();
+
+        chart_context
+            .draw_series(
+                LineSeries::new(
+                    eje_x.iter().map(|x_i| {
+                        (
+                            *x_i as f32,
+                            (f64::log10(
+                                (iteracion.get((*x_i) as usize).unwrap()
+                                    - iteracion.get((*x_i - 1) as usize).unwrap())
+                                .abs(),
+                            )) as f32,
+                        )
+                    }),
+                    ShapeStyle {
+                        color: color.clone(),
+                        filled: true,
+                        stroke_width: 2,
+                    },
+                )
+                .point_size(5),
+            )
+            .unwrap()
+            .label(format!(
+                "{}",
+                Metodos::try_from(metodo as i32).unwrap().to_string()
+            ))
+            .legend(move |(x, y)| {
+                Rectangle::new(
+                    [(x + 5, y - 5), (x + 15, y + 5)],
+                    ShapeStyle {
+                        color: color,
+                        filled: true,
+                        stroke_width: 1,
+                    },
+                )
+            });
+    }
+
+    chart_context
+        .configure_series_labels()
+        .position(SeriesLabelPosition::UpperRight)
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw()?;
+
+    Ok(())
+}
+
+fn grafico_error_absoluto(
+    iteraciones: &Vec<Vec<f64>>,
+    cant_iteraciones: u8,
+    raiz_real: f64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let drawing_area = SVGBackend::new("./error_absoluto.svg", GRAPH_RES).into_drawing_area();
+    drawing_area.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder
+        .margin(10)
+        .set_left_and_bottom_label_area_size(20);
+
+    let mut chart_context = chart_builder
+        .caption(
+            "Gráfico del Error Absoluto en Escala Logarítmica",
+            ("times-new-roman", 40),
+        )
+        .y_label_area_size(60)
+        .x_label_area_size(50)
+        .build_cartesian_2d(0f32..((cant_iteraciones) as f32), -16f32..1f32)
+        .unwrap();
+
+    chart_context
+        .configure_mesh()
+        .x_labels(15)
+        .y_labels(5)
+        .x_desc("número de iteraciones")
+        .y_desc("log10(|x_candidata - x_real|)")
+        .axis_desc_style(("times-new-roman", 20))
+        .draw()
+        .unwrap();
+
+    let colors: Vec<RGBAColor> = vec![
+        plotters::style::colors::full_palette::ORANGE_A400.into(), // BISECCION
+        plotters::style::colors::full_palette::PINK_A200.into(),   // PUNTO FIJO
+        plotters::style::colors::full_palette::DEEPPURPLE_400.into(), // SECANTE
+        plotters::style::colors::full_palette::INDIGO.into(),      // NEWTON RAPHSON
+        plotters::style::colors::full_palette::TEAL.into(),        // NEWTON RAPHSON MODIFICADO
+    ];
+
+    for (metodo, iteracion) in iteraciones.iter().enumerate() {
+        let eje_x: Vec<u8> = (0..((iteracion.len() - 1) as u8)).collect();
+
+        let color = *colors.get(metodo).unwrap();
+
+        chart_context
+            .draw_series(
+                LineSeries::new(
+                    eje_x.iter().map(|x_i| {
+                        (
+                            *x_i as f32,
+                            (f64::log10(
+                                (iteracion.get((*x_i) as usize).unwrap() - raiz_real).abs(),
+                            )) as f32,
+                        )
+                    }),
+                    ShapeStyle {
+                        color: color.clone(),
+                        filled: true,
+                        stroke_width: 2,
+                    },
+                )
+                .point_size(5),
+            )
+            .unwrap()
             .label(format!(
                 "{}",
                 Metodos::try_from(metodo as i32).unwrap().to_string()
@@ -436,36 +644,35 @@ fn grafico_constante_asintotica(
 }
 
 fn main() {
-    // let iteraciones: Vec<f64> = biseccion();
-    // let iteraciones: Vec<f64> = punto_fijo();
-    // let iteraciones: Vec<f64> = secante();
     let mut iteraciones: Vec<Vec<f64>> = Vec::new();
-    iteraciones.push(biseccion());
-    iteraciones.push(punto_fijo());
-    iteraciones.push(secante());
-    iteraciones.push(newton_raphson());
-    iteraciones.push(newton_raphson_modificado());
-    // let iteraciones: Vec<f64> = newton_raphson_modificado();
-    // let mut handler = vec![];
 
-    // let biseccion = thread::spawn(move || biseccion());
-    // handler.push(biseccion);
+    let mut handler = vec![];
 
-    // let punto_fijo = thread::spawn(move || punto_fijo());
-    // handler.push(punto_fijo);
+    let biseccion = thread::spawn(move || biseccion());
+    handler.push(biseccion);
 
-    // let secante = thread::spawn(move || secante());
-    // handler.push(secante);
+    let punto_fijo = thread::spawn(move || punto_fijo());
+    handler.push(punto_fijo);
 
-    // let newton_raphson = thread::spawn(move || newton_raphson());
-    // handler.push(newton_raphson);
+    let secante = thread::spawn(move || secante());
+    handler.push(secante);
 
-    // let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
-    // handler.push(newton_raphson_modificado);
+    let newton_raphson = thread::spawn(move || newton_raphson());
+    handler.push(newton_raphson);
 
-    // for h in handler {
-    //     let _ = h.join();
-    // }
+    let newton_raphson_modificado = thread::spawn(move || newton_raphson_modificado());
+    handler.push(newton_raphson_modificado);
+
+    for h in handler {
+        let (met, vec) = h.join().unwrap();
+        match met {
+            Metodos::Biseccion => iteraciones.insert(0, vec),
+            Metodos::PuntoFijo => iteraciones.insert(1, vec),
+            Metodos::Secante => iteraciones.insert(2, vec),
+            Metodos::NewtonRaphson => iteraciones.insert(3, vec),
+            Metodos::NewtonRaphsonModificado => iteraciones.insert(4, vec),
+        }
+    }
 
     //// GRAFICOS
     // CONVERGENCIA
@@ -489,17 +696,25 @@ fn main() {
         .iter()
         .map(|iteracion| *iteracion.last().unwrap())
         .collect();
+
     let constantes_asintoticas: Vec<Vec<f64>> =
         constante_asintotica(&iteraciones, ultima_convergencia, ultima_raiz);
 
     let _ = grafico_constante_asintotica(&constantes_asintoticas, (max_iter - 1) as u8);
 
-    // let mut convergency = SimpleConvergency {
-    //     eps: TOLERANCIA,
-    //     max_iter: 200,
-    // };
+    // DIFERENCIAS SUCESIVAS - ESCALA LOGARITMICA
+    let _ = grafico_diferencias_sucesivas(&iteraciones, (max_iter - 1) as u8);
 
-    // let r = roots::find_root_secant(INI_INTER, FIN_INTER, &f, &mut convergency);
+    // ERROR ABSOLUTO - ESCALA LOGARITMICA
+    let mut convergency = SimpleConvergency {
+        eps: TOLERANCIA,
+        max_iter: (MAX_ITER as usize),
+    };
 
-    // println!("Root found by crate: {}", r.unwrap());
+    let raiz_real =
+        roots::find_root_regula_falsi(INI_INTER, FIN_INTER, &f, &mut convergency).unwrap();
+
+    // println!("raiz real: {raiz_real}");
+
+    let _ = grafico_error_absoluto(&iteraciones, (max_iter - 1) as u8, raiz_real);
 }
