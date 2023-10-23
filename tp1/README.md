@@ -30,4 +30,4 @@ Para la ejecución del ejercicio n°3 de Polinomio Interpolante:
 
 ### Informe de Análisis
 
-![informe](./TP1%20-%20Búsqueda%20de%20Raíces.pdf)
+[Link al informe de Análisis](./TP1%20-%20Búsqueda%20de%20Raíces.pdf)
