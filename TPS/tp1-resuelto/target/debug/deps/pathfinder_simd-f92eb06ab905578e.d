@@ -1,0 +1,9 @@
+/Users/cdimatteo/FIUBA/Analisis-Numerico-I-75.12/tp1/target/debug/deps/pathfinder_simd-f92eb06ab905578e.rmeta: /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/lib.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/extras.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/mod.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_f32x4.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_i32x4.rs
+
+/Users/cdimatteo/FIUBA/Analisis-Numerico-I-75.12/tp1/target/debug/deps/pathfinder_simd-f92eb06ab905578e.d: /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/lib.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/extras.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/mod.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_f32x4.rs /Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_i32x4.rs
+
+/Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/lib.rs:
+/Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/extras.rs:
+/Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/mod.rs:
+/Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_f32x4.rs:
+/Users/cdimatteo/.cargo/registry/src/index.crates.io-6f17d22bba15001f/pathfinder_simd-0.5.2/src/scalar/swizzle_i32x4.rs:
